@@ -1,0 +1,6 @@
+{
+  "name": "Where Did My Money Go?",
+  "description": "A student pocket-money expense diary crafted with vintage scrapbook aesthetics and real-time calculations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

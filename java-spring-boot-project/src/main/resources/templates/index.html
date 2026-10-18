@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Where Did My Money Go? | a little diary of your spending</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Great+Vibes&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header class="site-header">
+        <div class="container header-container">
+            <div class="branding">
+                <span class="badge-tag">♡ 20-Mark College Project ♡</span>
+                <h1 class="site-title">Where Did My Money Go?</h1>
+                <p class="site-subtitle">a little diary of your spending</p>
+            </div>
+            <nav class="main-nav">
+                <a href="#overview">Overview</a>
+                <a href="#add-expense">Add Expense</a>
+                <a href="#breakdown">Breakdown</a>
+                <a href="#history">Diary</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        
+        <!-- HERO PANEL -->
+        <section class="hero-panel">
+            <div class="hero-badge">♡ A Student Pocket-Money Expense Diary ♡</div>
+            <h2 class="hero-title">Where Did My Money Go?</h2>
+            <p class="hero-sub">“Every rupee has a story. Let's find yours.”</p>
+            <div class="hero-line">🎀 🦋 🎀</div>
+        </section>
+
+        <!-- FLASH MESSAGES -->
+        <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}"></div>
+
+        <!-- B. MONTHLY MONEY SNAPSHOT -->
+        <section id="overview" class="section-container">
+            <div class="section-top">
+                <div>
+                    <h2 class="section-script-title">Monthly Money Snapshot</h2>
+                    <p class="section-typewriter-sub" th:text="'Summary for ' + ${currentMonthFormatted}">Summary for October 2026</p>
+                </div>
+                <!-- Budget Setting Pinned Form -->
+                <form th:action="@{/update-budget}" method="post" class="budget-pinned-form">
+                    <label for="pocketMoneyInput">Monthly Budget:</label>
+                    <div class="input-with-button">
+                        <span class="currency-symbol">₹</span>
+                        <input type="number" id="pocketMoneyInput" name="pocketMoney" th:value="${overview.totalPocketMoney}" min="0" step="100" required>
+                        <button type="submit" class="btn-secondary">Save</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- THREE POLAROID SUMMARY CARDS -->
+            <div class="polaroid-grid">
+                <div class="polaroid-card card-blush">
+                    <span class="card-label">✨ POCKET MONEY ✨</span>
+                    <span class="card-number" th:text="${overview.formattedPocketMoney}">₹5,000.00</span>
+                    <span class="card-note">monthly allowance budget</span>
+                </div>
+
+                <div class="polaroid-card card-chocolate">
+                    <span class="card-label">☕ MONEY SPENT 🍰</span>
+                    <span class="card-number" th:text="${overview.formattedTotalSpent}">₹2,339.00</span>
+                    <span class="card-note" th:text="${expenses.size()} + ' diary record(s)'">7 recorded expense(s)</span>
+                </div>
+
+                <div class="polaroid-card card-ivory" th:classappend="${overview.isOverspent} ? 'card-alert' : ''">
+                    <span class="card-label" th:text="${overview.isOverspent} ? '⚠️ BUDGET DEFICIT' : '🎀 MONEY LEFT'">🎀 MONEY LEFT</span>
+                    <span class="card-number" th:text="${overview.isOverspent} ? ${overview.formattedOverspentAmount} : ${overview.formattedMoneyLeft}">₹2,661.00</span>
+                    <span class="card-note" th:text="${overview.isOverspent} ? 'Oh dear! Over budget ♡' : 'Safe remaining balance ♡'">Safe remaining balance ♡</span>
+                </div>
+            </div>
+
+            <!-- RIBBON PROGRESS TRACKER -->
+            <div class="ribbon-tracker">
+                <div class="ribbon-labels">
+                    <span>🎀 Ribbon Spending Tracker</span>
+                    <span th:text="${overview.formattedProgress} + ' used'">46.8% used</span>
+                </div>
+                <div class="ribbon-track">
+                    <div class="ribbon-fill" th:style="'width: ' + ${overview.spendingProgressPercentage} + '%;'" th:classappend="${overview.isOverspent} ? 'fill-alert' : ''"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TWO-COLUMN WORKSPACE: ADD EXPENSE & CATEGORY BREAKDOWN -->
+        <div class="two-column-grid">
+            
+            <!-- C. ADD AN EXPENSE — THE MONEY DIARY -->
+            <section id="add-expense" class="scrapbook-sheet">
+                <div class="sheet-inner">
+                    <h2 class="section-script-title">Add a little expense</h2>
+                    <p class="section-typewriter-sub">The Money Diary &bull; Record your daily college spends</p>
+
+                    <form th:action="@{/add-expense}" th:object="${newExpense}" method="post" class="expense-form">
+                        <div class="form-group">
+                            <label for="title">Expense Name *</label>
+                            <input type="text" id="title" th:field="*{title}" placeholder="e.g. Canteen iced tea, Metro pass" required>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="amount">Amount in ₹ *</label>
+                                <input type="number" id="amount" th:field="*{amount}" step="0.50" min="0.50" placeholder="180.00" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="category">Category *</label>
+                                <select id="category" th:field="*{category}" required>
+                                    <option th:each="cat : ${categories}" th:value="${cat}" th:text="${cat}"></option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="expenseDate">Date *</label>
+                                <input type="date" id="expenseDate" th:field="*{expenseDate}" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="paymentMethod">Payment Method *</label>
+                                <select id="paymentMethod" th:field="*{paymentMethod}" required>
+                                    <option value="UPI">UPI</option>
+                                    <option value="Cash">Cash</option>
+                                    <option value="Card">Card</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="note">Optional Note</label>
+                            <input type="text" id="note" th:field="*{note}" placeholder="e.g. Shared split with roommate">
+                        </div>
+
+                        <button type="submit" class="btn-save-diary">♡ Save to My Diary ♡</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- D. WHERE THE MONEY WENT -->
+            <section id="breakdown" class="clippings-sheet">
+                <h2 class="section-script-title">Where the Money Went</h2>
+                <p class="section-typewriter-sub">Category percentage breakdown</p>
+
+                <div class="clippings-list">
+                    <div th:each="item : ${breakdowns}" class="clipping-card">
+                        <div class="clipping-info">
+                            <span class="clipping-name" th:text="${item.categoryName}">Food</span>
+                            <div>
+                                <strong th:text="${item.formattedAmount}">₹320.00</strong>
+                                <span class="clipping-pct" th:text="'(' + ${item.formattedPercentage} + ')'">(13.7%)</span>
+                            </div>
+                        </div>
+                        <div class="bar-track">
+                            <div class="bar-fill" th:style="'width: ' + ${item.percentage} + '%;'"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- E. MY SPENDING DIARY (JOURNAL CARDS) -->
+        <section id="history" class="history-container">
+            <div class="section-top">
+                <div>
+                    <h2 class="section-script-title" style="color: #FFF8EB;">My Spending Diary</h2>
+                    <p class="section-typewriter-sub" style="color: rgba(255,248,235,0.75);">Personal journal entries &bull; Filter by category and month</p>
+                </div>
+
+                <!-- FILTER CONTROLS -->
+                <form th:action="@{/}" method="get" class="filter-bar">
+                    <select name="category" onchange="this.form.submit()">
+                        <option value="ALL" th:selected="${selectedCategory == 'ALL'}">All Categories</option>
+                        <option th:each="c : ${categories}" th:value="${c}" th:text="${c}" th:selected="${selectedCategory == c}"></option>
+                    </select>
+
+                    <input type="month" name="month" th:value="${selectedMonth}" onchange="this.form.submit()">
+                </form>
+            </div>
+
+            <!-- JOURNAL CARDS GRID -->
+            <div class="journal-grid" th:if="${!expenses.isEmpty()}">
+                <div th:each="e : ${expenses}" class="journal-card">
+                    <div class="journal-card-top">
+                        <span class="journal-date" th:text="'📅 ' + ${e.formattedDate}">📅 18 Oct 2026</span>
+                        <div class="journal-tags">
+                            <span class="tag-cat" th:text="${e.category}">Food</span>
+                            <span class="tag-pay" th:text="${e.paymentMethod}">UPI</span>
+                        </div>
+                    </div>
+                    <div class="journal-card-body">
+                        <div>
+                            <h3 class="journal-title" th:text="${e.title}">Canteen Lunch</h3>
+                            <p class="journal-note" th:if="${e.note != null and !e.note.isEmpty()}" th:text="'“' + ${e.note} + '”'">“Pav bhaji with friends”</p>
+                        </div>
+                        <div class="journal-amount" th:text="${e.formattedAmount}">₹180.00</div>
+                    </div>
+                    <div class="journal-card-footer">
+                        <span class="entry-stamp">saved to diary ♡</span>
+                        <form th:action="@{'/delete-expense/' + ${e.id}}" method="post" style="display:inline;">
+                            <button type="submit" class="btn-delete" onclick="return confirm('Delete this diary entry?');">Delete</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EMPTY STATE -->
+            <div class="empty-diary" th:if="${expenses.isEmpty()}">
+                <p class="empty-script">Nothing in the diary yet. Your first entry goes here ♡</p>
+                <p class="empty-sub">Add your first expense above or adjust your month filter.</p>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p class="footer-title">Where Did My Money Go?</p>
+            <p class="footer-desc">a little diary of your spending &bull; 20-Mark Java Spring Boot 3 College Project</p>
+        </div>
+    </footer>
+
+</body>
+</html>
